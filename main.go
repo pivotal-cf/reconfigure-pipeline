@@ -12,7 +12,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/pivotal-cf/reconfigure-pipeline/lastpass"
+	"github.com/oozie/reconfigure-pipeline/lastpass"
 )
 
 func main() {
