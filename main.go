@@ -18,10 +18,10 @@ import (
 func main() {
 	// options
 	var pipelineName, configPath, target, variablesFile string
-	flag.StringVar(&configPath, "c", "config", "pipeline YAML file")
-	flag.StringVar(&pipelineName, "p", "pipeline", "pipeline name")
-	flag.StringVar(&target, "t", "target", "concourse target")
-	flag.StringVar(&variablesFile, "l", "load-vars-from", "template values in configuration from a YAML file")
+	flag.StringVar(&configPath, "c", "", "pipeline YAML file")
+	flag.StringVar(&pipelineName, "p", "", "pipeline name")
+	flag.StringVar(&target, "t", "", "concourse target")
+	flag.StringVar(&variablesFile, "l", "", "template values in configuration from a YAML file")
 	flag.Parse()
 
 	checkArgument(configPath)
@@ -41,7 +41,6 @@ func main() {
 	if variablesFile != "" {
 		args = append(args, "-l", variablesFile)
 	}
-	log.Print(args)
 	cmd := exec.Command("fly", args...)
 
 	cmd.Stdin = os.Stdin
