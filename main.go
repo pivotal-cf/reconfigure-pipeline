@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/url"
@@ -32,7 +34,7 @@ func main() {
 	}
 
 	tempConfigPath, err := PreprocessConfigFile(configPath)
-	defer os.Remove(tempConfigPath)
+	defer DestroyFile(tempConfigPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,6 +54,33 @@ func main() {
 		exitError := err.(*exec.ExitError)
 		status, _ := exitError.Sys().(syscall.WaitStatus)
 		os.Exit(status.ExitStatus())
+	}
+}
+
+func DestroyFile(filePath string) {
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		log.Println("WARN: Error while destroying the file:", err)
+		return
+	}
+
+	targetFile, err := os.OpenFile(filePath, os.O_WRONLY, 0200)
+	defer targetFile.Close()
+	sourceFile, err := os.OpenFile("/dev/urandom", os.O_RDONLY, 0400)
+	defer sourceFile.Close()
+
+	fileSize := fileInfo.Size()
+	written, err := io.CopyN(targetFile, sourceFile, fileSize)
+
+	if err != nil {
+		log.Println("WARN: Error while destroying the file:", err)
+	} else if written != fileSize {
+		log.Printf("WARN: Only %d out of %d bytes overwritten\n", written, fileSize)
+	}
+	fmt.Println(filePath)
+	err = os.Remove(filePath)
+	if err != nil {
+		log.Println("WARN: Error while destroying the file:", err)
 	}
 }
 
