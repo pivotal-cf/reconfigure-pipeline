@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/url"
@@ -33,8 +32,8 @@ func main() {
 		pipelineName = PipelineNameFromPath(configPath)
 	}
 
-	tempConfigPath, err := PreprocessConfigFile(configPath)
-	defer DestroyFile(tempConfigPath)
+	tempConfigPath, err := WriteConfigFile(configPath)
+	defer os.Remove(tempConfigPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,33 +56,6 @@ func main() {
 	}
 }
 
-func DestroyFile(filePath string) {
-	fileInfo, err := os.Stat(filePath)
-	if err != nil {
-		log.Println("WARN: Error while destroying the file:", err)
-		return
-	}
-
-	targetFile, err := os.OpenFile(filePath, os.O_WRONLY, 0200)
-	defer targetFile.Close()
-	sourceFile, err := os.OpenFile("/dev/urandom", os.O_RDONLY, 0400)
-	defer sourceFile.Close()
-
-	fileSize := fileInfo.Size()
-	written, err := io.CopyN(targetFile, sourceFile, fileSize)
-
-	if err != nil {
-		log.Println("WARN: Error while destroying the file:", err)
-	} else if written != fileSize {
-		log.Printf("WARN: Only %d out of %d bytes overwritten\n", written, fileSize)
-	}
-	fmt.Println(filePath)
-	err = os.Remove(filePath)
-	if err != nil {
-		log.Println("WARN: Error while destroying the file:", err)
-	}
-}
-
 func PipelineNameFromPath(path string) string {
 	foo := filepath.Base(path)
 
@@ -94,7 +66,7 @@ func PipelineNameFromPath(path string) string {
 	return strings.Join(parts[0:len(parts)-1], ".")
 }
 
-func PreprocessConfigFile(path string) (string, error) {
+func WriteConfigFile(path string) (string, error) {
 	configBytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		return "", err
@@ -108,16 +80,29 @@ func PreprocessConfigFile(path string) (string, error) {
 		return lastpass.Handle(credHandle)
 	})
 
-	tmpFile, err := ioutil.TempFile("", "reconfigure-vars")
-	defer tmpFile.Close()
-
+	tempDir, err := ioutil.TempDir("", "reconfigure-pipeline")
 	if err != nil {
 		return "", err
 	}
 
-	tmpFile.WriteString(processedConfig)
+	fifoPath := filepath.Join(tempDir, "fifo")
+	err = syscall.Mkfifo(fifoPath, 0600)
+	if err != nil {
+		return "", err
+	}
 
-	return tmpFile.Name(), nil
+	go func() {
+		f, err := os.OpenFile(fifoPath, os.O_WRONLY, 0600)
+		defer f.Close()
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		f.WriteString(processedConfig)
+	}()
+
+	return fifoPath, nil
 }
 
 func checkArgument(arg string) {
