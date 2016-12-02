@@ -9,10 +9,30 @@ import (
 	"os/exec"
 	"strings"
 
+	"regexp"
+
 	"gopkg.in/yaml.v2"
 )
 
-func Handle(credHandle *url.URL) string {
+type LastPassProcessor struct {
+}
+
+func NewProcessor() *LastPassProcessor {
+	return &LastPassProcessor{}
+}
+
+func (l *LastPassProcessor) Process(config string) string {
+	re := regexp.MustCompile("lpass:///(.*)")
+
+	processedConfig := re.ReplaceAllStringFunc(config, func(match string) string {
+		credHandle, _ := url.Parse(match)
+		return handle(credHandle)
+	})
+
+	return processedConfig
+}
+
+func handle(credHandle *url.URL) string {
 	pathParts := strings.Split(credHandle.Path, "/")
 
 	credential := getCredential(pathParts[1], pathParts[2])
