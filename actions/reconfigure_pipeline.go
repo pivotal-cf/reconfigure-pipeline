@@ -13,15 +13,15 @@ import (
 )
 
 type ReconfigurePipeline struct {
-	reconfigurer *concourse.Reconfigurer
-	processor    *lastpass.LastPassProcessor
-	fifoWriter   *fifo.Writer
+	reconfigurer concourse.Reconfigurer
+	processor    lastpass.Processor
+	fifoWriter   fifo.Writer
 }
 
 func NewReconfigurePipeline(
-	reconfigurer *concourse.Reconfigurer,
-	processor *lastpass.LastPassProcessor,
-	fifoWriter *fifo.Writer,
+	reconfigurer concourse.Reconfigurer,
+	processor lastpass.Processor,
+	fifoWriter fifo.Writer,
 ) *ReconfigurePipeline {
 	return &ReconfigurePipeline{
 		reconfigurer: reconfigurer,

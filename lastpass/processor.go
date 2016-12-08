@@ -14,14 +14,18 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type LastPassProcessor struct {
+type Processor interface {
+	Process(config string) string
 }
 
-func NewProcessor() *LastPassProcessor {
-	return &LastPassProcessor{}
+type processor struct {
 }
 
-func (l *LastPassProcessor) Process(config string) string {
+func NewProcessor() Processor {
+	return &processor{}
+}
+
+func (l *processor) Process(config string) string {
 	re := regexp.MustCompile("lpass:///(.*)")
 
 	processedConfig := re.ReplaceAllStringFunc(config, func(match string) string {

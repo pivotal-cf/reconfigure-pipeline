@@ -8,14 +8,18 @@ import (
 	"syscall"
 )
 
-type Writer struct {
+type Writer interface {
+	Write(content string) (string, error)
 }
 
-func NewWriter() *Writer {
-	return &Writer{}
+type writer struct {
 }
 
-func (f *Writer) Write(content string) (string, error) {
+func NewWriter() Writer {
+	return &writer{}
+}
+
+func (f *writer) Write(content string) (string, error) {
 	tempDir, err := ioutil.TempDir("", "reconfigure-pipeline")
 	if err != nil {
 		return "", err

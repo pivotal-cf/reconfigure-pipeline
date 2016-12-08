@@ -5,14 +5,18 @@ import (
 	"os/exec"
 )
 
-type Reconfigurer struct {
+type Reconfigurer interface {
+	Reconfigure(target, pipeline, configPath, variablesPath string) error
 }
 
-func NewReconfigurer() *Reconfigurer {
-	return &Reconfigurer{}
+type reconfigurer struct {
 }
 
-func (r *Reconfigurer) Reconfigure(target, pipeline, configPath, variablesPath string) error {
+func NewReconfigurer() Reconfigurer {
+	return &reconfigurer{}
+}
+
+func (r *reconfigurer) Reconfigure(target, pipeline, configPath, variablesPath string) error {
 	args := []string{"-t", target, "set-pipeline", "-p", pipeline, "-c", configPath}
 	if variablesPath != "" {
 		args = append(args, "-l", variablesPath)
