@@ -3,6 +3,8 @@ package concourse
 import (
 	"os"
 	"os/exec"
+
+	"code.cloudfoundry.org/commandrunner"
 )
 
 type Reconfigurer interface {
@@ -10,10 +12,13 @@ type Reconfigurer interface {
 }
 
 type reconfigurer struct {
+	commandRunner commandrunner.CommandRunner
 }
 
-func NewReconfigurer() Reconfigurer {
-	return &reconfigurer{}
+func NewReconfigurer(commandRunner commandrunner.CommandRunner) Reconfigurer {
+	return &reconfigurer{
+		commandRunner: commandRunner,
+	}
 }
 
 func (r *reconfigurer) Reconfigure(target, pipeline, configPath, variablesPath string) error {
@@ -28,5 +33,5 @@ func (r *reconfigurer) Reconfigure(target, pipeline, configPath, variablesPath s
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	return cmd.Run()
+	return r.commandRunner.Run(cmd)
 }

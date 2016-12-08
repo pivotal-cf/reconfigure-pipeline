@@ -7,10 +7,10 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 
-	"regexp"
-
+	"code.cloudfoundry.org/commandrunner"
 	"gopkg.in/yaml.v2"
 )
 
@@ -19,10 +19,13 @@ type Processor interface {
 }
 
 type processor struct {
+	commandRunner commandrunner.CommandRunner
 }
 
-func NewProcessor() Processor {
-	return &processor{}
+func NewProcessor(commandRunner commandrunner.CommandRunner) Processor {
+	return &processor{
+		commandRunner: commandRunner,
+	}
 }
 
 func (l *processor) Process(config string) string {
@@ -30,16 +33,16 @@ func (l *processor) Process(config string) string {
 
 	processedConfig := re.ReplaceAllStringFunc(config, func(match string) string {
 		credHandle, _ := url.Parse(match)
-		return handle(credHandle)
+		return l.handle(credHandle)
 	})
 
 	return processedConfig
 }
 
-func handle(credHandle *url.URL) string {
+func (l *processor) handle(credHandle *url.URL) string {
 	pathParts := strings.Split(credHandle.Path, "/")
 
-	credential := getCredential(pathParts[1], pathParts[2])
+	credential := l.getCredential(pathParts[1], pathParts[2])
 
 	if credHandle.Fragment != "" {
 		// Assume YAML contents, return element
@@ -61,7 +64,7 @@ func handle(credHandle *url.URL) string {
 	return credential
 }
 
-func getCredential(credential, field string) string {
+func (l *processor) getCredential(credential, field string) string {
 	fieldFlagMap := map[string]string{
 		"Password": "--password",
 		"Username": "--username",
@@ -84,14 +87,14 @@ func getCredential(credential, field string) string {
 		log.Fatal(err)
 	}
 
-	err = cmd.Start()
+	err = l.commandRunner.Start(cmd)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	output, err := ioutil.ReadAll(stdout)
 
-	err = cmd.Wait()
+	err = l.commandRunner.Wait(cmd)
 	if err != nil {
 		log.Fatal(err)
 	}

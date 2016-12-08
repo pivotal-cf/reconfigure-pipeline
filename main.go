@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 
+	"code.cloudfoundry.org/commandrunner/linux_command_runner"
 	"github.com/oozie/reconfigure-pipeline/actions"
 	"github.com/oozie/reconfigure-pipeline/concourse"
 	"github.com/oozie/reconfigure-pipeline/fifo"
@@ -11,7 +12,6 @@ import (
 )
 
 func main() {
-	// options
 	var pipeline, configPath, target, variablesPath string
 
 	flag.StringVar(&configPath, "c", "", "pipeline YAML file")
@@ -23,16 +23,22 @@ func main() {
 	checkArgument(configPath)
 	checkArgument(target)
 
-	reconfigurer := concourse.NewReconfigurer()
-	processor := lastpass.NewProcessor()
-	fifoWriter := fifo.NewWriter()
-
-	action := actions.NewReconfigurePipeline(reconfigurer, processor, fifoWriter)
+	action := newReconfigurePipeline()
 	err := action.Run(target, pipeline, configPath, variablesPath)
 
 	if err != nil {
 		os.Exit(1)
 	}
+}
+
+func newReconfigurePipeline() *actions.ReconfigurePipeline {
+	commandRunner := linux_command_runner.New()
+
+	reconfigurer := concourse.NewReconfigurer(commandRunner)
+	processor := lastpass.NewProcessor(commandRunner)
+	fifoWriter := fifo.NewWriter()
+
+	return actions.NewReconfigurePipeline(reconfigurer, processor, fifoWriter)
 }
 
 func checkArgument(arg string) {
