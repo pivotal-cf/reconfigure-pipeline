@@ -1,0 +1,11 @@
+---
+platform: linux
+
+image: docker:///golang
+
+inputs:
+- name: reconfigure-pipeline
+  path: go/src/github.com/pivotal-cf/reconfigure-pipeline
+
+run:
+  path: go/src/github.com/pivotal-cf/reconfigure-pipeline/ci/run-tests/task.sh
