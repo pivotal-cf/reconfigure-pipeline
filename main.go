@@ -4,8 +4,8 @@ import (
 	"flag"
 	"os"
 
-	"code.cloudfoundry.org/commandrunner/linux_command_runner"
 	"github.com/pivotal-cf/reconfigure-pipeline/actions"
+	"github.com/pivotal-cf/reconfigure-pipeline/commandrunner"
 	"github.com/pivotal-cf/reconfigure-pipeline/concourse"
 	"github.com/pivotal-cf/reconfigure-pipeline/fifo"
 	"github.com/pivotal-cf/reconfigure-pipeline/lastpass"
@@ -32,7 +32,7 @@ func main() {
 }
 
 func newReconfigurePipeline() *actions.ReconfigurePipeline {
-	commandRunner := linux_command_runner.New()
+	commandRunner := commandrunner.NewSimpleCommandRunner()
 
 	reconfigurer := concourse.NewReconfigurer(commandRunner)
 	processor := lastpass.NewProcessor(commandRunner)
