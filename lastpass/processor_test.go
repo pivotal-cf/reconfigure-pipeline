@@ -8,7 +8,7 @@ import (
 	"os/exec"
 
 	"code.cloudfoundry.org/commandrunner/fake_command_runner"
-	"github.com/oozie/reconfigure-pipeline/lastpass"
+	"github.com/pivotal-cf/reconfigure-pipeline/lastpass"
 )
 
 var _ = Describe("Processor", func() {

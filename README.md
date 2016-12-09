@@ -56,7 +56,7 @@ jobs:
 ## Installation
 
 ```
-go get github.com/oozie/reconfigure-pipeline
+go get github.com/pivotal-cf/reconfigure-pipeline
 ```
 
 ## Features & Limitations:

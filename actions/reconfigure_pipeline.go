@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/oozie/reconfigure-pipeline/concourse"
-	"github.com/oozie/reconfigure-pipeline/fifo"
-	"github.com/oozie/reconfigure-pipeline/lastpass"
+	"github.com/pivotal-cf/reconfigure-pipeline/concourse"
+	"github.com/pivotal-cf/reconfigure-pipeline/fifo"
+	"github.com/pivotal-cf/reconfigure-pipeline/lastpass"
 )
 
 type ReconfigurePipeline struct {

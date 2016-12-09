@@ -5,10 +5,10 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/commandrunner/linux_command_runner"
-	"github.com/oozie/reconfigure-pipeline/actions"
-	"github.com/oozie/reconfigure-pipeline/concourse"
-	"github.com/oozie/reconfigure-pipeline/fifo"
-	"github.com/oozie/reconfigure-pipeline/lastpass"
+	"github.com/pivotal-cf/reconfigure-pipeline/actions"
+	"github.com/pivotal-cf/reconfigure-pipeline/concourse"
+	"github.com/pivotal-cf/reconfigure-pipeline/fifo"
+	"github.com/pivotal-cf/reconfigure-pipeline/lastpass"
 )
 
 func main() {

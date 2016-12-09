@@ -19,7 +19,7 @@ var (
 )
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	path, err := Build("github.com/oozie/reconfigure-pipeline")
+	path, err := Build("github.com/pivotal-cf/reconfigure-pipeline")
 	Expect(err).NotTo(HaveOccurred())
 	return []byte(path)
 }, func(data []byte) {

@@ -3,9 +3,11 @@ package fifo_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/oozie/reconfigure-pipeline/fifo"
+
 	"io/ioutil"
 	"os"
+
+	"github.com/pivotal-cf/reconfigure-pipeline/fifo"
 )
 
 var _ = Describe("FIFO Writer", func() {

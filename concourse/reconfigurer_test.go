@@ -10,7 +10,7 @@ import (
 	"os/exec"
 
 	"code.cloudfoundry.org/commandrunner/fake_command_runner"
-	"github.com/oozie/reconfigure-pipeline/concourse"
+	"github.com/pivotal-cf/reconfigure-pipeline/concourse"
 )
 
 var _ = Describe("Reconfigurer", func() {
