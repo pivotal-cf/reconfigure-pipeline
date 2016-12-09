@@ -1,8 +1,8 @@
 package lastpass
 
 import (
+	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -49,9 +49,7 @@ func (l *processor) handle(credHandle *url.URL) string {
 		fragmentMap := map[string]string{}
 		err := yaml.Unmarshal([]byte(credential), &fragmentMap)
 		if err != nil {
-			if err != nil {
-				log.Fatal(err)
-			}
+			log.Fatal(err)
 		}
 		credential = fragmentMap[credHandle.Fragment]
 	}
@@ -77,27 +75,18 @@ func (l *processor) getCredential(credential, field string) string {
 		fieldFlag = "--field=" + field
 	}
 
+	output := &bytes.Buffer{}
+
 	cmd := exec.Command("lpass", "show", fieldFlag, credential)
 
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
+	cmd.Stdout = output
 
-	stdout, err := cmd.StdoutPipe()
+	err := l.commandRunner.Run(cmd)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = l.commandRunner.Start(cmd)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	output, err := ioutil.ReadAll(stdout)
-
-	err = l.commandRunner.Wait(cmd)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return string(output)
+	return output.String()
 }
