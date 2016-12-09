@@ -13,7 +13,7 @@ import (
 
 var _ = Describe("Processor", func() {
 	var (
-		processor     lastpass.Processor
+		processor     *lastpass.Processor
 		commandRunner *fake_command_runner.FakeCommandRunner
 	)
 

@@ -14,21 +14,17 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type Processor interface {
-	Process(config string) string
-}
-
-type processor struct {
+type Processor struct {
 	commandRunner commandrunner.CommandRunner
 }
 
-func NewProcessor(commandRunner commandrunner.CommandRunner) Processor {
-	return &processor{
+func NewProcessor(commandRunner commandrunner.CommandRunner) *Processor {
+	return &Processor{
 		commandRunner: commandRunner,
 	}
 }
 
-func (l *processor) Process(config string) string {
+func (l *Processor) Process(config string) string {
 	re := regexp.MustCompile("lpass:///(.*)")
 
 	processedConfig := re.ReplaceAllStringFunc(config, func(match string) string {
@@ -39,7 +35,7 @@ func (l *processor) Process(config string) string {
 	return processedConfig
 }
 
-func (l *processor) handle(credHandle *url.URL) string {
+func (l *Processor) handle(credHandle *url.URL) string {
 	pathParts := strings.Split(credHandle.Path, "/")
 
 	credential := l.getCredential(pathParts[1], pathParts[2])
@@ -62,7 +58,7 @@ func (l *processor) handle(credHandle *url.URL) string {
 	return credential
 }
 
-func (l *processor) getCredential(credential, field string) string {
+func (l *Processor) getCredential(credential, field string) string {
 	fieldFlagMap := map[string]string{
 		"Password": "--password",
 		"Username": "--username",

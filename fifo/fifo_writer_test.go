@@ -12,7 +12,7 @@ import (
 
 var _ = Describe("FIFO Writer", func() {
 	var (
-		writer fifo.Writer
+		writer *fifo.Writer
 	)
 
 	BeforeEach(func() {

@@ -6,22 +6,18 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/pivotal-cf/reconfigure-pipeline/concourse"
-	"github.com/pivotal-cf/reconfigure-pipeline/fifo"
-	"github.com/pivotal-cf/reconfigure-pipeline/lastpass"
 )
 
 type ReconfigurePipeline struct {
-	reconfigurer concourse.Reconfigurer
-	processor    lastpass.Processor
-	fifoWriter   fifo.Writer
+	reconfigurer Reconfigurer
+	processor    Processor
+	fifoWriter   Writer
 }
 
 func NewReconfigurePipeline(
-	reconfigurer concourse.Reconfigurer,
-	processor lastpass.Processor,
-	fifoWriter fifo.Writer,
+	reconfigurer Reconfigurer,
+	processor Processor,
+	fifoWriter Writer,
 ) *ReconfigurePipeline {
 	return &ReconfigurePipeline{
 		reconfigurer: reconfigurer,
@@ -42,7 +38,7 @@ func (r *ReconfigurePipeline) Run(target, pipeline, configPath, variablesPath st
 		log.Fatal(err)
 	}
 
-	return r.reconfigurer.Reconfigure(target, pipeline, configPath, variablesPath)
+	return r.reconfigurer.Reconfigure(target, pipeline, processedConfigPath, variablesPath)
 }
 
 func (r *ReconfigurePipeline) processConfigFile(path string) (string, error) {

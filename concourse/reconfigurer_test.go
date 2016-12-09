@@ -15,7 +15,7 @@ import (
 
 var _ = Describe("Reconfigurer", func() {
 	var (
-		reconfigurer  concourse.Reconfigurer
+		reconfigurer  *concourse.Reconfigurer
 		commandRunner *fake_command_runner.FakeCommandRunner
 	)
 
