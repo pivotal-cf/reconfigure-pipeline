@@ -4,8 +4,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
-	"strings"
 )
 
 type ReconfigurePipeline struct {
@@ -27,10 +25,6 @@ func NewReconfigurePipeline(
 }
 
 func (r *ReconfigurePipeline) Run(target, pipeline, configPath, variablesPath string) error {
-	if pipeline == "" {
-		pipeline = pipelineNameFromPath(configPath)
-	}
-
 	processedConfigPath, err := r.processConfigFile(configPath)
 	defer os.Remove(processedConfigPath)
 
@@ -52,14 +46,4 @@ func (r *ReconfigurePipeline) processConfigFile(path string) (string, error) {
 	processedConfig := r.processor.Process(config)
 
 	return r.fifoWriter.Write(processedConfig)
-}
-
-func pipelineNameFromPath(path string) string {
-	foo := filepath.Base(path)
-
-	// Strip the extension
-	// TODO: deal with a case of no extension
-	parts := strings.Split(foo, ".")
-
-	return strings.Join(parts[0:len(parts)-1], ".")
 }

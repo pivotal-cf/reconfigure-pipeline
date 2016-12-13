@@ -64,13 +64,4 @@ var _ = Describe("Reconfigure Pipeline", func() {
 		Expect(configPath).To(Equal("/tmp/processed.yml"))
 		Expect(variablesPath).To(Equal("/tmp/vars.yml"))
 	})
-
-	It("derives the pipeline name from the configuration file if omitted", func() {
-		action.Run("my-special-target", "", configPath, "")
-
-		Expect(reconfigurer.ReconfigureCallCount()).To(Equal(1))
-
-		_, pipeline, _, _ := reconfigurer.ReconfigureArgsForCall(0)
-		Expect(pipeline).To(Equal("some-config"))
-	})
 })
