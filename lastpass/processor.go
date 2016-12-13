@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"log"
-	"net/url"
 	"os"
 	"os/exec"
 	"regexp"
@@ -25,29 +24,34 @@ func NewProcessor(commandRunner commandrunner.CommandRunner) *Processor {
 }
 
 func (l *Processor) Process(config string) string {
-	re := regexp.MustCompile("lpass:///(.*)")
+	re := regexp.MustCompile(`\(\((.*)\)\)`)
 
 	processedConfig := re.ReplaceAllStringFunc(config, func(match string) string {
-		credHandle, _ := url.Parse(match)
-		return l.handle(credHandle)
+		submatches := re.FindStringSubmatch(match)
+		return l.handle(submatches[1])
 	})
 
 	return processedConfig
 }
 
-func (l *Processor) handle(credHandle *url.URL) string {
-	pathParts := strings.Split(credHandle.Path, "/")
+func (l *Processor) handle(credHandle string) string {
+	pathParts := strings.Split(credHandle, "/")
 
-	credential := l.getCredential(pathParts[1], pathParts[2])
+	credential := l.getCredential(pathParts[0], pathParts[1])
 
-	if credHandle.Fragment != "" {
+	fragment := ""
+	if len(pathParts) > 2 {
+		fragment = pathParts[2]
+	}
+
+	if fragment != "" {
 		// Assume YAML contents, return element
 		fragmentMap := map[string]string{}
 		err := yaml.Unmarshal([]byte(credential), &fragmentMap)
 		if err != nil {
 			log.Fatal(err)
 		}
-		credential = fragmentMap[credHandle.Fragment]
+		credential = fragmentMap[fragment]
 	}
 
 	if strings.Contains(credential, "\n") {

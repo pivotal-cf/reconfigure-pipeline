@@ -23,13 +23,6 @@ var _ = Describe("Processor", func() {
 		processor = lastpass.NewProcessor(commandRunner)
 	})
 
-	It("does not modify a pipeline without LastPass credentials", func() {
-		input := "key: credhub:///my-credential"
-		output := processor.Process(input)
-
-		Expect(output).To(Equal(output))
-	})
-
 	It("fetches usernames", func() {
 		commandRunner.WhenRunning(CommandSpec{
 			Path: "lpass",
@@ -43,7 +36,7 @@ var _ = Describe("Processor", func() {
 			return nil
 		})
 
-		input := "key: lpass:///my-credential/Username"
+		input := "key: ((my-credential/Username))"
 		output := processor.Process(input)
 
 		Expect(output).To(Equal("key: my-username"))
@@ -62,7 +55,7 @@ var _ = Describe("Processor", func() {
 			return nil
 		})
 
-		input := "key: lpass:///my-credential/Password"
+		input := "key: ((my-credential/Password))"
 		output := processor.Process(input)
 
 		Expect(output).To(Equal("key: my-password"))
@@ -81,7 +74,7 @@ var _ = Describe("Processor", func() {
 			return nil
 		})
 
-		input := "key: lpass:///my-credential/URL"
+		input := "key: ((my-credential/URL))"
 		output := processor.Process(input)
 
 		Expect(output).To(Equal("key: my-url"))
@@ -100,7 +93,7 @@ var _ = Describe("Processor", func() {
 			return nil
 		})
 
-		input := "key: lpass:///my-credential/Notes"
+		input := "key: ((my-credential/Notes))"
 		output := processor.Process(input)
 
 		Expect(output).To(Equal("key: my-notes"))
@@ -119,7 +112,7 @@ var _ = Describe("Processor", func() {
 			return nil
 		})
 
-		input := "key: lpass:///my-credential/my-field"
+		input := "key: ((my-credential/my-field))"
 		output := processor.Process(input)
 
 		Expect(output).To(Equal("key: my-value"))
@@ -138,7 +131,7 @@ var _ = Describe("Processor", func() {
 			return nil
 		})
 
-		input := "key: lpass:///my-credential/Notes"
+		input := "key: ((my-credential/Notes))"
 		output := processor.Process(input)
 
 		Expect(output).To(Equal(`key: "line-1\nline-2"`))
@@ -157,7 +150,7 @@ var _ = Describe("Processor", func() {
 			return nil
 		})
 
-		input := "key: lpass:///my-credential/Notes#inner-key"
+		input := "key: ((my-credential/Notes/inner-key))"
 		output := processor.Process(input)
 
 		Expect(output).To(Equal("key: inner-value"))
