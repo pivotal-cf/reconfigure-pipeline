@@ -7,9 +7,11 @@ image_resource:
     repository: golang
 
 inputs:
-- name: version
 - name: reconfigure-pipeline
   path: go/src/github.com/pivotal-cf/reconfigure-pipeline
 
+outputs:
+- name: build-binaries-output
+
 run:
-  path: go/src/github.com/pivotal-cf/reconfigure-pipeline/ci/run-tests/task.sh
+  path: go/src/github.com/pivotal-cf/reconfigure-pipeline/ci/build-binaries/task.sh
