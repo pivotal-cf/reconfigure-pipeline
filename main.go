@@ -1,9 +1,9 @@
 package main
 
 import (
-	"flag"
 	"os"
 
+	"github.com/jessevdk/go-flags"
 	"github.com/pivotal-cf/reconfigure-pipeline/actions"
 	"github.com/pivotal-cf/reconfigure-pipeline/commandrunner"
 	"github.com/pivotal-cf/reconfigure-pipeline/concourse"
@@ -12,19 +12,20 @@ import (
 )
 
 func main() {
-	var pipeline, configPath, target, variablesPath string
+	var opts struct {
+		ConfigPath    string `short:"c" long:"config" required:"true" description:"Pipeline configuration file"`
+		Pipeline      string `short:"p" long:"pipeline" required:"true" description:"Pipeline to configure"`
+		Target        string `short:"t" long:"target" required:"true" description:"Concourse target name"`
+		VariablesPath string `short:"l" long:"load-vars-from" description:"Variable flag that can be used for filling in template values in configuration from a YAML file"`
+	}
 
-	flag.StringVar(&configPath, "c", "", "pipeline YAML file")
-	flag.StringVar(&pipeline, "p", "", "pipeline name")
-	flag.StringVar(&target, "t", "", "concourse target")
-	flag.StringVar(&variablesPath, "l", "", "template values in configuration from a YAML file")
-	flag.Parse()
-
-	checkArgument(configPath)
-	checkArgument(target)
+	_, err := flags.Parse(&opts)
+	if err != nil {
+		os.Exit(2)
+	}
 
 	action := newReconfigurePipeline()
-	err := action.Run(target, pipeline, configPath, variablesPath)
+	err = action.Run(opts.Target, opts.Pipeline, opts.ConfigPath, opts.VariablesPath)
 
 	if err != nil {
 		os.Exit(1)
@@ -39,11 +40,4 @@ func newReconfigurePipeline() *actions.ReconfigurePipeline {
 	fifoWriter := fifo.NewWriter()
 
 	return actions.NewReconfigurePipeline(reconfigurer, processor, fifoWriter)
-}
-
-func checkArgument(arg string) {
-	if arg == "" {
-		flag.Usage()
-		os.Exit(2)
-	}
 }

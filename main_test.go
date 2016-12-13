@@ -12,6 +12,6 @@ var _ = Describe("reconfigure-pipeline", func() {
 		session := runCommand()
 		Eventually(session).Should(Exit(2))
 
-		Expect(session.Err).To(Say("Usage of"))
+		Expect(session.Err).To(Say("the required flags `-c, --config', `-p, --pipeline' and `-t, --target' were not specified"))
 	})
 })
