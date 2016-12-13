@@ -17,8 +17,8 @@ pushd "${GOPATH}/src/github.com/pivotal-cf/reconfigure-pipeline"
 
   go get -v -t ./...
 
-  for GOOS in linux darwin; do
-    go build
+  for os in linux darwin; do
+    GOOS=${os} go build
 
     tar -cvzf "${OUTPUT}/reconfigure-pipeline-${GOOS}.tar.gz" "reconfigure-pipeline"
   done
