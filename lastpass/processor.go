@@ -54,12 +54,8 @@ func (l *Processor) handle(credHandle string) string {
 		credential = fragmentMap[fragment]
 	}
 
-	if strings.Contains(credential, "\n") {
-		encoded, _ := json.Marshal(credential) // always a string
-		return string(encoded)
-	}
-
-	return credential
+	encoded, _ := json.Marshal(credential)
+	return string(encoded)
 }
 
 func (l *Processor) getCredential(credential, field string) string {

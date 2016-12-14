@@ -39,7 +39,7 @@ var _ = Describe("Processor", func() {
 		input := "key: ((my-credential/Username))"
 		output := processor.Process(input)
 
-		Expect(output).To(Equal("key: my-username"))
+		Expect(output).To(Equal(`key: "my-username"`))
 	})
 
 	It("fetches passwords", func() {
@@ -58,7 +58,7 @@ var _ = Describe("Processor", func() {
 		input := "key: ((my-credential/Password))"
 		output := processor.Process(input)
 
-		Expect(output).To(Equal("key: my-password"))
+		Expect(output).To(Equal(`key: "my-password"`))
 	})
 
 	It("fetches URLs", func() {
@@ -77,7 +77,7 @@ var _ = Describe("Processor", func() {
 		input := "key: ((my-credential/URL))"
 		output := processor.Process(input)
 
-		Expect(output).To(Equal("key: my-url"))
+		Expect(output).To(Equal(`key: "my-url"`))
 	})
 
 	It("fetches notes", func() {
@@ -96,7 +96,7 @@ var _ = Describe("Processor", func() {
 		input := "key: ((my-credential/Notes))"
 		output := processor.Process(input)
 
-		Expect(output).To(Equal("key: my-notes"))
+		Expect(output).To(Equal(`key: "my-notes"`))
 	})
 
 	It("fetches other fields", func() {
@@ -115,7 +115,7 @@ var _ = Describe("Processor", func() {
 		input := "key: ((my-credential/my-field))"
 		output := processor.Process(input)
 
-		Expect(output).To(Equal("key: my-value"))
+		Expect(output).To(Equal(`key: "my-value"`))
 	})
 
 	It("encodes multi-line strings", func() {
@@ -137,6 +137,25 @@ var _ = Describe("Processor", func() {
 		Expect(output).To(Equal(`key: "line-1\nline-2"`))
 	})
 
+	It("encodes embedded JSON", func() {
+		commandRunner.WhenRunning(CommandSpec{
+			Path: "lpass",
+			Args: []string{
+				"show",
+				"--notes",
+				"my-credential",
+			},
+		}, func(cmd *exec.Cmd) error {
+			cmd.Stdout.Write([]byte(`{"inner-key":"inner-value"}`))
+			return nil
+		})
+
+		input := "key: ((my-credential/Notes))"
+		output := processor.Process(input)
+
+		Expect(output).To(Equal(`key: "{\"inner-key\":\"inner-value\"}"`))
+	})
+
 	It("supports fragments for notes", func() {
 		commandRunner.WhenRunning(CommandSpec{
 			Path: "lpass",
@@ -153,6 +172,6 @@ var _ = Describe("Processor", func() {
 		input := "key: ((my-credential/Notes/inner-key))"
 		output := processor.Process(input)
 
-		Expect(output).To(Equal("key: inner-value"))
+		Expect(output).To(Equal(`key: "inner-value"`))
 	})
 })
