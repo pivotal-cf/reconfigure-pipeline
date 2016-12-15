@@ -14,12 +14,14 @@ import (
 )
 
 type Processor struct {
-	commandRunner commandrunner.CommandRunner
+	commandRunner   commandrunner.CommandRunner
+	credentialCache map[string]string
 }
 
 func NewProcessor(commandRunner commandrunner.CommandRunner) *Processor {
 	return &Processor{
-		commandRunner: commandRunner,
+		commandRunner:   commandRunner,
+		credentialCache: map[string]string{},
 	}
 }
 
@@ -59,6 +61,18 @@ func (l *Processor) handle(credHandle string) string {
 }
 
 func (l *Processor) getCredential(credential, field string) string {
+	cacheKey := strings.Join([]string{credential, field}, "/")
+	credentialValue := l.credentialCache[cacheKey]
+
+	if credentialValue == "" {
+		credentialValue = l.getCredentialFromLastPass(credential, field)
+		l.credentialCache[cacheKey] = credentialValue
+	}
+
+	return credentialValue
+}
+
+func (l *Processor) getCredentialFromLastPass(credential, field string) string {
 	fieldFlagMap := map[string]string{
 		"Password": "--password",
 		"Username": "--username",

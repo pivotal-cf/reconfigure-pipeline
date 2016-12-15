@@ -174,4 +174,30 @@ var _ = Describe("Processor", func() {
 
 		Expect(output).To(Equal(`key: "inner-value"`))
 	})
+
+	It("does not call LastPass multiple times for the same credential", func() {
+		commandRunner.WhenRunning(CommandSpec{
+			Path: "lpass",
+			Args: []string{
+				"show",
+				"--notes",
+				"my-credential",
+			},
+		}, func(cmd *exec.Cmd) error {
+			cmd.Stdout.Write([]byte(`inner-key-1: inner-value-1
+inner-key-2: inner-value-2
+`))
+			return nil
+		})
+
+		input := `key-1: ((my-credential/Notes/inner-key-1))
+key-2: ((my-credential/Notes/inner-key-2))`
+
+		output := processor.Process(input)
+
+		Expect(commandRunner.ExecutedCommands()).To(HaveLen(1))
+
+		Expect(output).To(Equal(`key-1: "inner-value-1"
+key-2: "inner-value-2"`))
+	})
 })
