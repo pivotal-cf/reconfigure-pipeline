@@ -44,7 +44,7 @@ Basic syntax in a pipeline looks like:
 key: ((credential-name/field/inner-key))
 ```
 
-Where `credential-name` is the name of a credential in LastPass, field is a valid LastPass field name (see below), and the inner-key is an optional hash key that denotes the value stored in LastPass should be parsed as a YAML document, most commonly used with the Notes field.
+Where `credential-name` is the name of a credential in LastPass, `field` is a valid LastPass field name (see below), and `inner-key` is an optional hash key that denotes the value stored in LastPass should be parsed as a YAML document, most commonly used with the Notes field.
 
 ### Fields
 
