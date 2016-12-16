@@ -6,13 +6,21 @@ reconfigure-pipeline is a command-line tool that streamlines the process of pull
 
 [The Github incident in October 2016](https://github.com/blog/2273-incident-report-inadvertent-private-repository-disclosure) that allowed cloning private repos belonging to other users demonstrated the dangers of keeping credentials in git repositories. For this reason, many teams created tooling, usually in the form of shell scripts, that pulls credentials from LastPass using the LastPass CLI and feeds them into fly or [BOSH](https://bosh.io/).
 
-reconfigure-pipeline was built to avoid duplication of work while ensuring the security of credentials.
+Some of these tools work by storing the entire pipeline, or every credential in a pipeline, in one or a few notes in LastPass. Not only does this lead to unnecessary overhead in maintaining these complex YAML documents using an editor that wasn't built for this purpose, but it also discourages good credential hygiene.
+
+reconfigure-pipeline was built to avoid duplication of work while ensuring the security of credentials. It encourages using the appropriate types in LastPass, while preserving backwards compatibility with tooling that is in use today.
 
 ## Installation
 
-The latest binary release can be found [here](https://github.com/pivotal-cf/reconfigure-pipeline/releases).
+### Prerequisites
 
-To install from source:
+To use reconfigure-pipeline, you need to have the LastPass CLI and fly installed on your system and in your `PATH`.
+
+### Binary Releases
+
+The latest binary release for macOS and Linux can be found [here](https://github.com/pivotal-cf/reconfigure-pipeline/releases).
+
+### Installing From Source
 
 ```
 go get -u github.com/pivotal-cf/reconfigure-pipeline
@@ -36,7 +44,23 @@ Basic syntax in a pipeline looks like:
 key: ((credential-name/field/inner-key))
 ```
 
-Where `credential-name` is the name of a credential in LastPass, field is one of Username, Password, Notes, URL, or a custom field, and the inner-key is an optional hash key that denotes the value stored in LastPass should be parsed as a YAML document, most commonly used with the Notes field.
+Where `credential-name` is the name of a credential in LastPass, field is a valid LastPass field name (see below), and the inner-key is an optional hash key that denotes the value stored in LastPass should be parsed as a YAML document, most commonly used with the Notes field.
+
+### Fields
+
+LastPass items have a variety of different fields, depending on the item type. Some of the most commonly used fields are:
+
+* Username
+* Password
+* URL
+* Notes
+* Hostname
+* Port
+* Public Key
+* Private Key
+* Passphrase
+
+You can see what fields are available on a particular item by running `lpass show item-name`
 
 ### Sample Pipeline
 
