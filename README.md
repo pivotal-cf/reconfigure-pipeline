@@ -1,58 +1,12 @@
 # reconfigure-pipeline
 
-This is a [concourse](https://concourse.ci) fly wrapper that fetches secrets for your pipeline without ever storing them on disk. 
+reconfigure-pipeline is a command-line tool that streamlines the process of pulling credentials from [LastPass](http://lastpass.com/) into a [Concourse](https://concourse.ci/) pipeline. It uses the [LastPass CLI](https://github.com/lastpass/lastpass-cli) to read credentials from LastPass, writes these credentials to a [named pipe](https://en.wikipedia.org/wiki/Named_pipe), and calls [fly](https://concourse.ci/fly-cli.html) with the named pipe as an argument, ensuring credentials are never written to disk.
 
-## Example Usage
+## Motivation
 
-Let's say that you combine three types of secret notes in your pipeline: `Server` storing your AWS key pair (`my-aws-keys`), `SSH Key` with private key fetching your git repo (`repo-deploy-key`) and a freeform `Generic` with flat YAML for miscellaneous credentials (`misc-ci-creds`).
+[The Github incident in October 2016](https://github.com/blog/2273-incident-report-inadvertent-private-repository-disclosure) that allowed cloning private repos belonging to other users demonstrated the dangers of keeping credentials in git repositories. For this reason, many teams created tooling, usually in the form of shell scripts, that pulls credentials from LastPass using the LastPass CLI and feeds them into fly or [BOSH](https://bosh.io/).
 
-`reconfigure-pipeline -t ci -p my-pipeline -c my-pipeline.yml` will understand the `((...))` notation, fetch credentials and produce a YAML consumable by `fly`.
-
-```
-# my-pipeline.yml
-
-resources:
-- name: golang
-  type: docker-image
-  source:
-    repository: golang
-    tag: latest
-
-resource_types:
-- name: terraform
-  type: docker-image
-  source:
-    repository: ljfranklin/terraform-resource
-
-resources:
-  - name: terraform
-    type: terraform
-    source:
-      storage:
-        bucket: mybucket
-        bucket_path: terraform-ci/
-        access_key_id: ((my-aws-keys/Username))
-        secret_access_key: ((my-aws-keys/Password))
-
-  - name: my-ci-repo
-    type: git
-    source:
-      uri: git@github.com:oozie/private-repo
-      branch: master
-      private_key: ((repo-deploy-key/Notes))
-
-jobs:
-- name: do-my-thing
-  public: true
-  serial: true
-  plan:
-  - get: my-ci-repo
-    trigger: true
-  - task: do-my-thing
-    params:
-      datadog_api_key: ((misc-ci-creds/Notes/datadog-api-key))
-      pivnet_api_key: ((misc-ci-creds/Notes/pivnet-api-key))
-```
+reconfigure-pipeline was built to avoid duplication of work while ensuring the security of credentials.
 
 ## Installation
 
@@ -64,6 +18,60 @@ To install from source:
 go get github.com/pivotal-cf/reconfigure-pipeline
 ```
 
-## Features & Limitations:
+## Usage
 
-* At the moment `reconfigure-pipeline` can fetch credentials from any store as long as it's LastPass.
+```
+reconfigure-pipeline --target my-target --pipeline my-pipeline --config my-pipeline.yml
+```
+
+Where `my-target` is the name of a fly target and `my-pipeline` is the name of the pipeline you wish to reconfigure.
+
+## Syntax
+
+reconfigure-pipeline uses the same syntax as the [new BOSH CLI](https://bosh.io/docs/cli-v2.html) for credential interpolation, with a few LastPass-specific extensions.
+
+Basic syntax in a pipeline looks like:
+
+```yaml
+key: ((credential-name/field/inner-key))
+```
+
+Where `credential-name` is the name of a credential in LastPass, field is one of Username, Password, Notes, URL, or a custom field, and the inner-key is an optional hash key that denotes the value stored in LastPass should be parsed as a YAML document, most commonly used with the Notes field.
+
+### Sample Pipeline
+
+```yaml
+---
+resources:
+- name: web-app
+  type: git
+  source:
+    uri: git@github.com/pivotal-cf/web-app.git
+
+- name: web-app-staging
+  type: cf
+  source:
+    api: ((web-app-staging/URL))
+    username: ((web-app-staging/Username))
+    password: ((web-app-staging/Password))
+    organization: some-org
+    space: some-space
+
+jobs:
+- name: job-deploy-app
+  plan:
+  - get: web-app
+  - put: web-app-staging
+    params:
+      manifest: web-app/manifest.yml
+      environment_variables:
+        PRIVATE_KEY: ((web-app-staging-private-key/Notes))
+        SERVICE_URL: ((web-app-staging/Notes/service-url))
+        SERVICE_TOKEN: ((web-app-staging/Notes/service-token))
+```
+
+Where the credentials in LastPass look like:
+
+![web-app-staging](images/web-app-staging.png)
+
+![web-app-staging-private-key](images/web-app-staging-private-key.png)
