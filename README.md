@@ -15,7 +15,7 @@ The latest binary release can be found [here](https://github.com/pivotal-cf/reco
 To install from source:
 
 ```
-go get github.com/pivotal-cf/reconfigure-pipeline
+go get -u github.com/pivotal-cf/reconfigure-pipeline
 ```
 
 ## Usage
