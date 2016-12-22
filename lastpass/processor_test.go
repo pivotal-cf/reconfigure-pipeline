@@ -127,7 +127,7 @@ var _ = Describe("Processor", func() {
 				"my-credential",
 			},
 		}, func(cmd *exec.Cmd) error {
-			cmd.Stdout.Write([]byte("line-1\nline-2"))
+			cmd.Stdout.Write([]byte("line-1\nline-2\n"))
 			return nil
 		})
 

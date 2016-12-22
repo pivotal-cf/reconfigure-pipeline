@@ -98,5 +98,5 @@ func (l *Processor) getCredentialFromLastPass(credential, field string) string {
 		log.Fatal(err)
 	}
 
-	return output.String()
+	return strings.TrimSpace(output.String())
 }
