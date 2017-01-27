@@ -53,10 +53,14 @@ func (l *Processor) handle(credHandle string) string {
 		fragmentMap := map[string]interface{}{}
 		err := yaml.Unmarshal([]byte(credential), &fragmentMap)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 
-		value := fragmentMap[fragment]
+		value, found := fragmentMap[fragment]
+		if !found {
+			log.Fatalf("could not find key '%s'\n", fragment)
+		}
+
 		encoded, _ = json.Marshal(value)
 	} else {
 		encoded, _ = json.Marshal(credential)
