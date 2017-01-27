@@ -175,6 +175,25 @@ var _ = Describe("Processor", func() {
 		Expect(output).To(Equal(`key: "inner-value"`))
 	})
 
+	It("supports arrays of strings in YAML notes", func() {
+		commandRunner.WhenRunning(CommandSpec{
+			Path: "lpass",
+			Args: []string{
+				"show",
+				"--notes",
+				"my-credential",
+			},
+		}, func(cmd *exec.Cmd) error {
+			cmd.Stdout.Write([]byte("inner-key:\n-  inner-value-1\n- inner-value-2\n"))
+			return nil
+		})
+
+		input := "key: ((my-credential/Notes/inner-key))"
+		output := processor.Process(input)
+
+		Expect(output).To(Equal(`key: ["inner-value-1","inner-value-2"]`))
+	})
+
 	It("does not call LastPass multiple times for the same credential", func() {
 		commandRunner.WhenRunning(CommandSpec{
 			Path: "lpass",

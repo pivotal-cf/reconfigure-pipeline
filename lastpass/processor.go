@@ -46,17 +46,22 @@ func (l *Processor) handle(credHandle string) string {
 		fragment = pathParts[2]
 	}
 
+	var encoded []byte
+
 	if fragment != "" {
 		// Assume YAML contents, return element
-		fragmentMap := map[string]string{}
+		fragmentMap := map[string]interface{}{}
 		err := yaml.Unmarshal([]byte(credential), &fragmentMap)
 		if err != nil {
 			log.Fatal(err)
 		}
-		credential = fragmentMap[fragment]
+
+		value := fragmentMap[fragment]
+		encoded, _ = json.Marshal(value)
+	} else {
+		encoded, _ = json.Marshal(credential)
 	}
 
-	encoded, _ := json.Marshal(credential)
 	return string(encoded)
 }
 
