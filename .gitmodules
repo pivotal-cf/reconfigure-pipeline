@@ -15,4 +15,4 @@
 	url = https://gopkg.in/yaml.v2
 [submodule "vendor/code.cloudfoundry.org/commandrunner"]
 	path = vendor/code.cloudfoundry.org/commandrunner
-	url = https://code.cloudfoundry.org/commandrunner
+	url = https://github.com/cloudfoundry/commandrunner.git
