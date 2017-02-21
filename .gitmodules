@@ -1,0 +1,18 @@
+[submodule "vendor/github.com/jessevdk/go-flags"]
+	path = vendor/github.com/jessevdk/go-flags
+	url = https://github.com/jessevdk/go-flags
+[submodule "vendor/github.com/onsi/ginkgo"]
+	path = vendor/github.com/onsi/ginkgo
+	url = https://github.com/onsi/ginkgo
+[submodule "vendor/github.com/onsi/gomega"]
+	path = vendor/github.com/onsi/gomega
+	url = https://github.com/onsi/gomega
+[submodule "vendor/golang.org/x/sys"]
+	path = vendor/golang.org/x/sys
+	url = https://go.googlesource.com/sys
+[submodule "vendor/gopkg.in/yaml.v2"]
+	path = vendor/gopkg.in/yaml.v2
+	url = https://gopkg.in/yaml.v2
+[submodule "vendor/code.cloudfoundry.org/commandrunner"]
+	path = vendor/code.cloudfoundry.org/commandrunner
+	url = https://code.cloudfoundry.org/commandrunner

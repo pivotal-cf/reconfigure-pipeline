@@ -9,17 +9,15 @@ OUTPUT=$(pwd)/build-binaries-output
 
 VERSION=$(cat version/number)
 
-echo "$VERSION" > "${OUTPUT}/name"
-echo "$VERSION" > "${OUTPUT}/tag"
+echo "$VERSION" > "$OUTPUT/name"
+echo "$VERSION" > "$OUTPUT/tag"
 
-pushd "${GOPATH}/src/github.com/pivotal-cf/reconfigure-pipeline"
+pushd "$GOPATH/src/github.com/pivotal-cf/reconfigure-pipeline"
   git rev-parse HEAD > "${OUTPUT}/commit"
-
-  go get -v -t ./...
 
   for os in linux darwin; do
     GOOS=${os} go build
 
-    tar -cvzf "${OUTPUT}/reconfigure-pipeline-${os}.tar.gz" "reconfigure-pipeline"
+    tar -cvzf "$OUTPUT/reconfigure-pipeline-${os}.tar.gz" "reconfigure-pipeline"
   done
 popd
