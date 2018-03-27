@@ -44,6 +44,17 @@ func (r *ReconfigurePipeline) processConfigFile(path string) (string, error) {
 	config := string(configBytes)
 
 	processedConfig := r.processor.Process(config)
+	tempFile, err := ioutil.TempFile("/tmp", "reconfigure_pipeline")
+	if err != nil {
+		return "", err
+	}
 
-	return r.fifoWriter.Write(processedConfig)
+	defer tempFile.Close()
+	_,err = tempFile.Write([]byte(processedConfig))
+	if err != nil {
+		return "", err
+	}
+
+
+	return tempFile.Name(), nil
 }
