@@ -9,18 +9,18 @@ import (
 type ReconfigurePipeline struct {
 	reconfigurer Reconfigurer
 	processor    Processor
-	fifoWriter   Writer
+	configWriter Writer
 }
 
 func NewReconfigurePipeline(
 	reconfigurer Reconfigurer,
 	processor Processor,
-	fifoWriter Writer,
+	configWriter Writer,
 ) *ReconfigurePipeline {
 	return &ReconfigurePipeline{
 		reconfigurer: reconfigurer,
 		processor:    processor,
-		fifoWriter:   fifoWriter,
+		configWriter: configWriter,
 	}
 }
 
@@ -45,5 +45,5 @@ func (r *ReconfigurePipeline) processConfigFile(path string) (string, error) {
 
 	processedConfig := r.processor.Process(config)
 
-	return r.fifoWriter.Write(processedConfig)
+	return r.configWriter.Write(processedConfig)
 }

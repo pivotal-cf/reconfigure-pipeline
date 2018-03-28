@@ -7,8 +7,8 @@ import (
 	"github.com/pivotal-cf/reconfigure-pipeline/actions"
 	"github.com/pivotal-cf/reconfigure-pipeline/commandrunner"
 	"github.com/pivotal-cf/reconfigure-pipeline/concourse"
-	"github.com/pivotal-cf/reconfigure-pipeline/fifo"
 	"github.com/pivotal-cf/reconfigure-pipeline/lastpass"
+	"github.com/pivotal-cf/reconfigure-pipeline/writer"
 )
 
 func main() {
@@ -37,7 +37,7 @@ func newReconfigurePipeline() *actions.ReconfigurePipeline {
 
 	reconfigurer := concourse.NewReconfigurer(commandRunner)
 	processor := lastpass.NewProcessor(commandRunner)
-	fifoWriter := fifo.NewWriter()
+	configWriter := writer.NewConfigWriter()
 
-	return actions.NewReconfigurePipeline(reconfigurer, processor, fifoWriter)
+	return actions.NewReconfigurePipeline(reconfigurer, processor, configWriter)
 }

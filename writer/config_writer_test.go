@@ -1,28 +1,29 @@
-package fifo_test
+package writer_test
 
 import (
+	"os"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"io/ioutil"
-	"os"
 
-	"github.com/pivotal-cf/reconfigure-pipeline/fifo"
+	"github.com/pivotal-cf/reconfigure-pipeline/writer"
 )
 
-var _ = Describe("FIFO Writer", func() {
+var _ = Describe("Config Writer", func() {
 	var (
-		writer *fifo.Writer
+		configWriter *writer.ConfigWriter
 	)
 
 	BeforeEach(func() {
-		writer = fifo.NewWriter()
+		configWriter = writer.NewConfigWriter()
 	})
 
-	It("writes to a fifo and returns the path", func() {
+	It("writes to a tmp file and returns the path", func() {
 		contents := "My Special Contents"
 
-		path, err := writer.Write(contents)
+		path, err := configWriter.Write(contents)
 		Expect(err).NotTo(HaveOccurred())
 
 		defer os.Remove(path)

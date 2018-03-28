@@ -1,4 +1,4 @@
-package fifo_test
+package writer_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestFifo(t *testing.T) {
+func TestWriter(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Fifo Suite")
+	RunSpecs(t, "Writer Suite")
 }
