@@ -2,9 +2,6 @@
 
 reconfigure-pipeline is a command-line tool that streamlines the process of pulling credentials from [LastPass](http://lastpass.com/) into a [Concourse](https://concourse.ci/) pipeline. It uses the [LastPass CLI](https://github.com/lastpass/lastpass-cli) to read credentials from LastPass, writes these credentials to a [named pipe](https://en.wikipedia.org/wiki/Named_pipe), and calls [fly](https://concourse.ci/fly-cli.html) with the named pipe as an argument, ensuring credentials are never written to disk.
 
-### known issue
-reconfigure-pipeline does not work with versions of fly compiled with [go versions greater than 1.8.7](https://github.com/golang/go/issues/24164) on Mac OSX. A simple workaround is to re-compile fly with go 1.8.7 or execute reconfigure-pipeline in a linux container. 
-
 ## Motivation
 
 [The Github incident in October 2016](https://github.com/blog/2273-incident-report-inadvertent-private-repository-disclosure) that allowed cloning private repos belonging to other users demonstrated the dangers of keeping credentials in git repositories. For this reason, many teams created tooling, usually in the form of shell scripts, that pulls credentials from LastPass using the LastPass CLI and feeds them into fly or [BOSH](https://bosh.io/).
