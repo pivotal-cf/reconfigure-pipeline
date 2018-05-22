@@ -49,13 +49,12 @@ func (l *Processor) handle(credHandle string) string {
 	pathParts := strings.Split(credHandle, "/")
 	if len(pathParts) == 1 {
 	  encoded, _ = json.Marshal(fmt.Sprintf("((%s))", credHandle))
-	  return string(encoded)
+		return fmt.Sprintf("((%s))", credHandle)
 	}
 
 	err, credential := l.getCredential(pathParts[0], pathParts[1])
 	if err != nil {
-		encoded, _ = json.Marshal(fmt.Sprintf("((%s))", credHandle))
-		return string(encoded)
+		return fmt.Sprintf("((%s))", credHandle)
 	}
 
 	fragment := ""

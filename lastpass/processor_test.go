@@ -225,7 +225,7 @@ key-2: "inner-value-2"`))
 		input := "key: ((top_level_field))"
 		output := processor.Process(input)
 
-		Expect(output).To(Equal(`key: "((top_level_field))"`))
+		Expect(output).To(Equal(`key: ((top_level_field))`))
 	})
 
 	It("leaves unknown fields alone", func() {
@@ -243,7 +243,7 @@ key-2: "inner-value-2"`))
 		input := "key: ((unknown/secret))"
 		output := processor.Process(input)
 
-		Expect(output).To(Equal(`key: "((unknown/secret))"`))
+		Expect(output).To(Equal(`key: ((unknown/secret))`))
 	})
 
 	It("caches lpass error values", func() {
@@ -262,8 +262,8 @@ key-2: "inner-value-2"`))
 key-2: ((unknown/secret))`
 		output := processor.Process(input)
 
-		Expect(output).To(Equal(`key-1: "((unknown/secret))"
-key-2: "((unknown/secret))"`))
+		Expect(output).To(Equal(`key-1: ((unknown/secret))
+key-2: ((unknown/secret))`))
 
 		Expect(commandRunner.ExecutedCommands()).To(HaveLen(2))
 	})
