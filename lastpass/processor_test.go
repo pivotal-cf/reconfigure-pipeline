@@ -9,6 +9,7 @@ import (
 
 	"code.cloudfoundry.org/commandrunner/fake_command_runner"
 	"github.com/pivotal-cf/reconfigure-pipeline/lastpass"
+	"errors"
 )
 
 var _ = Describe("Processor", func() {
@@ -214,9 +215,56 @@ key-2: ((my-credential/Notes/inner-key-2))`
 
 		output := processor.Process(input)
 
-		Expect(commandRunner.ExecutedCommands()).To(HaveLen(1))
+		Expect(commandRunner.ExecutedCommands()).To(HaveLen(2))
 
 		Expect(output).To(Equal(`key-1: "inner-value-1"
 key-2: "inner-value-2"`))
+	})
+
+	It("leaves top level fields alone", func() {
+		input := "key: ((top_level_field))"
+		output := processor.Process(input)
+
+		Expect(output).To(Equal(`key: "((top_level_field))"`))
+	})
+
+	It("leaves unknown fields alone", func() {
+		commandRunner.WhenRunning(CommandSpec{
+			Path: "lpass",
+			Args: []string{
+				"show",
+				"--field=secret",
+				"unknown",
+			},
+		}, func(cmd *exec.Cmd) error {
+			return errors.New("Exit Status 1")
+		})
+
+		input := "key: ((unknown/secret))"
+		output := processor.Process(input)
+
+		Expect(output).To(Equal(`key: "((unknown/secret))"`))
+	})
+
+	It("caches lpass error values", func() {
+		commandRunner.WhenRunning(CommandSpec{
+			Path: "lpass",
+			Args: []string{
+				"show",
+				"--field=secret",
+				"unknown",
+			},
+		}, func(cmd *exec.Cmd) error {
+			return errors.New("Exit Status 1")
+		})
+
+		input := `key-1: ((unknown/secret))
+key-2: ((unknown/secret))`
+		output := processor.Process(input)
+
+		Expect(output).To(Equal(`key-1: "((unknown/secret))"
+key-2: "((unknown/secret))"`))
+
+		Expect(commandRunner.ExecutedCommands()).To(HaveLen(2))
 	})
 })
