@@ -1,0 +1,53 @@
+resources:
+- name: reconfigure-pipeline
+  type: git
+  source:
+    uri: git@github.com:pivotal-cf/reconfigure-pipeline
+    branch: master
+    private_key: ((ci-credentials/Notes/pcf-sec-triage-ci-github-key))
+
+- name: version
+  type: semver
+  source:
+    driver: s3
+    bucket: reconfigure-pipeline-versions
+    key: current-version
+    access_key_id: ((ci-credentials/Notes/reconfigure_pipeline_s3_access_key_id))
+    secret_access_key: ((ci-credentials/Notes/reconfigure_pipeline_s3_secret_access_key))
+
+- name: github-release
+  type: github-release
+  source:
+    user: pivotal-cf
+    repository: reconfigure-pipeline
+    access_token: ((ci-credentials/Notes/sec-triage-ci-write))
+
+jobs:
+- name: run-tests
+  plan:
+  - get: reconfigure-pipeline
+    trigger: true
+  - task: run-tests
+    file: reconfigure-pipeline/ci/run-tests/task.yml
+
+- name: release
+  plan:
+  - aggregate:
+    - get: reconfigure-pipeline
+      trigger: true
+      passed: [run-tests]
+    - get: version
+      params:
+        bump: minor
+  - task: build-binaries
+    file: reconfigure-pipeline/ci/build-binaries/task.yml
+  - put: github-release
+    params:
+      name: build-binaries-output/name
+      tag: build-binaries-output/tag
+      tag_prefix: v
+      commitish: build-binaries-output/commit
+      globs: [ "build-binaries-output/reconfigure-pipeline-*.tar.gz" ]
+  - put: version
+    params:
+      file: version/number
