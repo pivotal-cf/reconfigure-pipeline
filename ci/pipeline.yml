@@ -32,7 +32,7 @@ jobs:
 
 - name: release
   plan:
-  - aggregate:
+  - in_parallel:
     - get: reconfigure-pipeline
       trigger: true
       passed: [run-tests]
