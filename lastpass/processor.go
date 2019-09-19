@@ -3,14 +3,16 @@ package lastpass
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"log"
 	"os/exec"
 	"regexp"
 	"strings"
 
+	"fmt"
+
 	"code.cloudfoundry.org/commandrunner"
 	"gopkg.in/yaml.v2"
-	"fmt"
 )
 
 type Processor struct {
@@ -19,8 +21,13 @@ type Processor struct {
 }
 
 type cacheResult struct {
-	 Err error
-	 Result string
+	Err    error
+	Result string
+}
+
+type Credential struct {
+	Name      string
+	FlagIndex int
 }
 
 func NewProcessor(commandRunner commandrunner.CommandRunner) *Processor {
@@ -48,18 +55,25 @@ func (l *Processor) handle(credHandle string) string {
 
 	pathParts := strings.Split(credHandle, "/")
 	if len(pathParts) == 1 {
-	  encoded, _ = json.Marshal(fmt.Sprintf("((%s))", credHandle))
+		encoded, _ = json.Marshal(fmt.Sprintf("((%s))", credHandle))
 		return fmt.Sprintf("((%s))", credHandle)
 	}
 
-	err, credential := l.getCredential(pathParts[0], pathParts[1])
+	err, cred := l.FindCredential(pathParts)
+
+	if err != nil {
+		return fmt.Sprintf("((%s))", credHandle)
+	}
+
+	err, credential := l.getCredential(cred.Name, pathParts[cred.FlagIndex])
+
 	if err != nil {
 		return fmt.Sprintf("((%s))", credHandle)
 	}
 
 	fragment := ""
-	if len(pathParts) > 2 {
-		fragment = pathParts[2]
+	if len(pathParts) > cred.FlagIndex+1 {
+		fragment = pathParts[cred.FlagIndex+1]
 	}
 
 	if fragment != "" {
@@ -83,13 +97,46 @@ func (l *Processor) handle(credHandle string) string {
 	return string(encoded)
 }
 
+func (l *Processor) FindCredential(pathParts []string) (error, Credential) {
+	cmd := exec.Command("lpass", "ls", pathParts[0])
+
+	output := &bytes.Buffer{}
+	cmd.Stdout = output
+
+	err := l.commandRunner.Run(cmd)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("lpass error: %s", output))
+	}
+
+	var credentialArray []string
+	var flagIndex int
+
+	for i, path := range pathParts {
+		if strings.Contains(output.String(), path) {
+			credentialArray = append(credentialArray, path)
+		} else {
+			flagIndex = i
+			break
+		}
+	}
+
+	if len(credentialArray) == 0 {
+		return errors.New("credential does not exist"), Credential{}
+	}
+
+	return nil, Credential{
+		Name:      strings.Join(credentialArray, "/"),
+		FlagIndex: flagIndex,
+	}
+}
+
 func (l *Processor) getCredential(credential, field string) (error, string) {
 	var err error
 	cacheKey := strings.Join([]string{credential, field}, "/")
 	credentialValue := l.credentialCache[cacheKey].Result
 	err = l.credentialCache[cacheKey].Err
 
-	if credentialValue == "" &&  err == nil {
+	if credentialValue == "" && err == nil {
 		err, credentialValue = l.getCredentialFromLastPass(credential, field)
 		l.credentialCache[cacheKey] = cacheResult{err, credentialValue}
 	}

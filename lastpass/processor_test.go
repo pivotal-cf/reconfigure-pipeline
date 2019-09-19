@@ -1,15 +1,18 @@
 package lastpass_test
 
 import (
-	. "code.cloudfoundry.org/commandrunner/fake_command_runner"
+	"fmt"
+	"strings"
+
+	"code.cloudfoundry.org/commandrunner/fake_command_runner"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"os/exec"
 
-	"code.cloudfoundry.org/commandrunner/fake_command_runner"
-	"github.com/pivotal-cf/reconfigure-pipeline/lastpass"
 	"errors"
+
+	"github.com/pivotal-cf/reconfigure-pipeline/lastpass"
 )
 
 var _ = Describe("Processor", func() {
@@ -24,201 +27,305 @@ var _ = Describe("Processor", func() {
 		processor = lastpass.NewProcessor(commandRunner)
 	})
 
-	It("fetches usernames", func() {
-		commandRunner.WhenRunning(CommandSpec{
+	It("identifies credentials", func() {
+		commandRunner.WhenRunning(fake_command_runner.CommandSpec{
 			Path: "lpass",
 			Args: []string{
-				"show",
-				"--username",
-				"my-credential",
+				"ls",
+				"my-folder",
 			},
 		}, func(cmd *exec.Cmd) error {
-			cmd.Stdout.Write([]byte("my-username"))
+			cmd.Stdout.Write([]byte("my-folder\n    my-credential [id: 9999999]"))
 			return nil
 		})
 
-		input := "key: ((my-credential/Username))"
-		output := processor.Process(input)
+		input := []string{"my-folder", "my-credential", "Username"}
+		expected := lastpass.Credential{
+			Name:      "my-folder/my-credential",
+			FlagIndex: 2,
+		}
+		err, output := processor.FindCredential(input)
 
-		Expect(output).To(Equal(`key: "my-username"`))
+		Expect(err).ToNot(HaveOccurred())
+		Expect(output).To(Equal(expected))
 	})
 
-	It("fetches passwords", func() {
-		commandRunner.WhenRunning(CommandSpec{
-			Path: "lpass",
-			Args: []string{
-				"show",
-				"--password",
-				"my-credential",
-			},
-		}, func(cmd *exec.Cmd) error {
-			cmd.Stdout.Write([]byte("my-password"))
-			return nil
+	It("returns error when credential doesn't exist", func() {
+		input := []string{"my-folder", "my-credential", "Username"}
+		err, _ := processor.FindCredential(input)
+
+		Expect(err).To(Equal(errors.New("credential does not exist")))
+	})
+
+	Context("when some folder exist", func() {
+		folder := "some-folder"
+		cred := "my-credential"
+
+		BeforeEach(func() {
+			commandRunner.WhenRunning(fake_command_runner.CommandSpec{
+				Path: "lpass",
+				Args: []string{
+					"ls",
+					folder,
+				},
+			}, func(cmd *exec.Cmd) error {
+				cmd.Stdout.Write([]byte(fmt.Sprintf("%s\n    %s [id: 9999999]", folder, cred)))
+				return nil
+			})
 		})
 
-		input := "key: ((my-credential/Password))"
-		output := processor.Process(input)
+		It("fetches usernames", func() {
+			commandRunner.WhenRunning(fake_command_runner.CommandSpec{
+				Path: "lpass",
+				Args: []string{
+					"show",
+					"--username",
+					fmt.Sprintf("%s/%s", folder, cred),
+				},
+			}, func(cmd *exec.Cmd) error {
+				cmd.Stdout.Write([]byte("my-username"))
+				return nil
+			})
 
-		Expect(output).To(Equal(`key: "my-password"`))
-	})
+			input := "key: ((some-folder/my-credential/Username))"
+			output := processor.Process(input)
 
-	It("fetches URLs", func() {
-		commandRunner.WhenRunning(CommandSpec{
-			Path: "lpass",
-			Args: []string{
-				"show",
-				"--url",
-				"my-credential",
-			},
-		}, func(cmd *exec.Cmd) error {
-			cmd.Stdout.Write([]byte("my-url"))
-			return nil
+			Expect(output).To(Equal(`key: "my-username"`))
 		})
 
-		input := "key: ((my-credential/URL))"
-		output := processor.Process(input)
+		It("supports fragments for notes", func() {
+			commandRunner.WhenRunning(fake_command_runner.CommandSpec{
+				Path: "lpass",
+				Args: []string{
+					"show",
+					"--notes",
+					fmt.Sprintf("%s/%s", folder, cred),
+				},
+			}, func(cmd *exec.Cmd) error {
+				cmd.Stdout.Write([]byte("inner-key: inner-value\n"))
+				return nil
+			})
 
-		Expect(output).To(Equal(`key: "my-url"`))
+			input := "key: ((some-folder/my-credential/Notes/inner-key))"
+			output := processor.Process(input)
+
+			Expect(output).To(Equal(`key: "inner-value"`))
+		})
 	})
 
-	It("fetches notes", func() {
-		commandRunner.WhenRunning(CommandSpec{
-			Path: "lpass",
-			Args: []string{
-				"show",
-				"--notes",
-				"my-credential",
-			},
-		}, func(cmd *exec.Cmd) error {
-			cmd.Stdout.Write([]byte("my-notes"))
-			return nil
+	Context("when credentials exist not in a folder", func() {
+		cred := "my-credential"
+
+		BeforeEach(func() {
+			commandRunner.WhenRunning(fake_command_runner.CommandSpec{
+				Path: "lpass",
+				Args: []string{
+					"ls",
+					cred,
+				},
+			}, func(cmd *exec.Cmd) error {
+				cmd.Stdout.Write([]byte(fmt.Sprintf("((none))\n    %s [id: 9999999]", cred)))
+				return nil
+			})
 		})
 
-		input := "key: ((my-credential/Notes))"
-		output := processor.Process(input)
+		It("fetches usernames", func() {
+			commandRunner.WhenRunning(fake_command_runner.CommandSpec{
+				Path: "lpass",
+				Args: []string{
+					"show",
+					"--username",
+					cred,
+				},
+			}, func(cmd *exec.Cmd) error {
+				cmd.Stdout.Write([]byte("my-username"))
+				return nil
+			})
 
-		Expect(output).To(Equal(`key: "my-notes"`))
-	})
+			input := "key: ((my-credential/Username))"
+			output := processor.Process(input)
 
-	It("fetches other fields", func() {
-		commandRunner.WhenRunning(CommandSpec{
-			Path: "lpass",
-			Args: []string{
-				"show",
-				"--field=my-field",
-				"my-credential",
-			},
-		}, func(cmd *exec.Cmd) error {
-			cmd.Stdout.Write([]byte("my-value"))
-			return nil
+			Expect(output).To(Equal(`key: "my-username"`))
 		})
 
-		input := "key: ((my-credential/my-field))"
-		output := processor.Process(input)
+		It("fetches passwords", func() {
+			commandRunner.WhenRunning(fake_command_runner.CommandSpec{
+				Path: "lpass",
+				Args: []string{
+					"show",
+					"--password",
+					cred,
+				},
+			}, func(cmd *exec.Cmd) error {
+				cmd.Stdout.Write([]byte("my-password"))
+				return nil
+			})
 
-		Expect(output).To(Equal(`key: "my-value"`))
-	})
+			input := "key: ((my-credential/Password))"
+			output := processor.Process(input)
 
-	It("encodes multi-line strings", func() {
-		commandRunner.WhenRunning(CommandSpec{
-			Path: "lpass",
-			Args: []string{
-				"show",
-				"--notes",
-				"my-credential",
-			},
-		}, func(cmd *exec.Cmd) error {
-			cmd.Stdout.Write([]byte("line-1\nline-2\n"))
-			return nil
+			Expect(output).To(Equal(`key: "my-password"`))
 		})
 
-		input := "key: ((my-credential/Notes))"
-		output := processor.Process(input)
+		It("fetches URLs", func() {
+			commandRunner.WhenRunning(fake_command_runner.CommandSpec{
+				Path: "lpass",
+				Args: []string{
+					"show",
+					"--url",
+					cred,
+				},
+			}, func(cmd *exec.Cmd) error {
+				cmd.Stdout.Write([]byte("my-url"))
+				return nil
+			})
 
-		Expect(output).To(Equal(`key: "line-1\nline-2"`))
-	})
+			input := "key: ((my-credential/URL))"
+			output := processor.Process(input)
 
-	It("encodes embedded JSON", func() {
-		commandRunner.WhenRunning(CommandSpec{
-			Path: "lpass",
-			Args: []string{
-				"show",
-				"--notes",
-				"my-credential",
-			},
-		}, func(cmd *exec.Cmd) error {
-			cmd.Stdout.Write([]byte(`{"inner-key":"inner-value"}`))
-			return nil
+			Expect(output).To(Equal(`key: "my-url"`))
 		})
 
-		input := "key: ((my-credential/Notes))"
-		output := processor.Process(input)
+		It("fetches notes", func() {
+			commandRunner.WhenRunning(fake_command_runner.CommandSpec{
+				Path: "lpass",
+				Args: []string{
+					"show",
+					"--notes",
+					cred,
+				},
+			}, func(cmd *exec.Cmd) error {
+				cmd.Stdout.Write([]byte("my-notes"))
+				return nil
+			})
 
-		Expect(output).To(Equal(`key: "{\"inner-key\":\"inner-value\"}"`))
-	})
+			input := "key: ((my-credential/Notes))"
+			output := processor.Process(input)
 
-	It("supports fragments for notes", func() {
-		commandRunner.WhenRunning(CommandSpec{
-			Path: "lpass",
-			Args: []string{
-				"show",
-				"--notes",
-				"my-credential",
-			},
-		}, func(cmd *exec.Cmd) error {
-			cmd.Stdout.Write([]byte("inner-key: inner-value\n"))
-			return nil
+			Expect(output).To(Equal(`key: "my-notes"`))
 		})
 
-		input := "key: ((my-credential/Notes/inner-key))"
-		output := processor.Process(input)
+		It("fetches other fields", func() {
+			commandRunner.WhenRunning(fake_command_runner.CommandSpec{
+				Path: "lpass",
+				Args: []string{
+					"show",
+					"--field=my-field",
+					cred,
+				},
+			}, func(cmd *exec.Cmd) error {
+				cmd.Stdout.Write([]byte("my-value"))
+				return nil
+			})
 
-		Expect(output).To(Equal(`key: "inner-value"`))
-	})
+			input := "key: ((my-credential/my-field))"
+			output := processor.Process(input)
 
-	It("supports arrays of strings in YAML notes", func() {
-		commandRunner.WhenRunning(CommandSpec{
-			Path: "lpass",
-			Args: []string{
-				"show",
-				"--notes",
-				"my-credential",
-			},
-		}, func(cmd *exec.Cmd) error {
-			cmd.Stdout.Write([]byte("inner-key:\n-  inner-value-1\n- inner-value-2\n"))
-			return nil
+			Expect(output).To(Equal(`key: "my-value"`))
 		})
 
-		input := "key: ((my-credential/Notes/inner-key))"
-		output := processor.Process(input)
+		It("encodes multi-line strings", func() {
+			commandRunner.WhenRunning(fake_command_runner.CommandSpec{
+				Path: "lpass",
+				Args: []string{
+					"show",
+					"--notes",
+					cred,
+				},
+			}, func(cmd *exec.Cmd) error {
+				cmd.Stdout.Write([]byte("line-1\nline-2\n"))
+				return nil
+			})
 
-		Expect(output).To(Equal(`key: ["inner-value-1","inner-value-2"]`))
-	})
+			input := "key: ((my-credential/Notes))"
+			output := processor.Process(input)
 
-	It("does not call LastPass multiple times for the same credential", func() {
-		commandRunner.WhenRunning(CommandSpec{
-			Path: "lpass",
-			Args: []string{
-				"show",
-				"--notes",
-				"my-credential",
-			},
-		}, func(cmd *exec.Cmd) error {
-			cmd.Stdout.Write([]byte(`inner-key-1: inner-value-1
+			Expect(output).To(Equal(`key: "line-1\nline-2"`))
+		})
+
+		It("encodes embedded JSON", func() {
+			commandRunner.WhenRunning(fake_command_runner.CommandSpec{
+				Path: "lpass",
+				Args: []string{
+					"show",
+					"--notes",
+					cred,
+				},
+			}, func(cmd *exec.Cmd) error {
+				cmd.Stdout.Write([]byte(`{"inner-key":"inner-value"}`))
+				return nil
+			})
+
+			input := "key: ((my-credential/Notes))"
+			output := processor.Process(input)
+
+			Expect(output).To(Equal(`key: "{\"inner-key\":\"inner-value\"}"`))
+		})
+
+		It("supports fragments for notes", func() {
+			commandRunner.WhenRunning(fake_command_runner.CommandSpec{
+				Path: "lpass",
+				Args: []string{
+					"show",
+					"--notes",
+					cred,
+				},
+			}, func(cmd *exec.Cmd) error {
+				cmd.Stdout.Write([]byte("inner-key: inner-value\n"))
+				return nil
+			})
+
+			input := "key: ((my-credential/Notes/inner-key))"
+			output := processor.Process(input)
+
+			Expect(output).To(Equal(`key: "inner-value"`))
+		})
+
+		It("supports arrays of strings in YAML notes", func() {
+			commandRunner.WhenRunning(fake_command_runner.CommandSpec{
+				Path: "lpass",
+				Args: []string{
+					"show",
+					"--notes",
+					cred,
+				},
+			}, func(cmd *exec.Cmd) error {
+				cmd.Stdout.Write([]byte("inner-key:\n-  inner-value-1\n- inner-value-2\n"))
+				return nil
+			})
+
+			input := "key: ((my-credential/Notes/inner-key))"
+			output := processor.Process(input)
+
+			Expect(output).To(Equal(`key: ["inner-value-1","inner-value-2"]`))
+		})
+
+		It("does not call LastPass multiple times for the same credential", func() {
+			commandRunner.WhenRunning(fake_command_runner.CommandSpec{
+				Path: "lpass",
+				Args: []string{
+					"show",
+					"--notes",
+					cred,
+				},
+			}, func(cmd *exec.Cmd) error {
+				cmd.Stdout.Write([]byte(`inner-key-1: inner-value-1
 inner-key-2: inner-value-2
 `))
-			return nil
-		})
+				return nil
+			})
 
-		input := `key-1: ((my-credential/Notes/inner-key-1))
+			input := `key-1: ((my-credential/Notes/inner-key-1))
 key-2: ((my-credential/Notes/inner-key-2))`
 
-		output := processor.Process(input)
+			output := processor.Process(input)
 
-		Expect(commandRunner.ExecutedCommands()).To(HaveLen(2))
+			callsToShow := getCallCount("show", commandRunner)
+			Expect(callsToShow).To(Equal(1))
 
-		Expect(output).To(Equal(`key-1: "inner-value-1"
+			Expect(output).To(Equal(`key-1: "inner-value-1"
 key-2: "inner-value-2"`))
+		})
 	})
 
 	It("leaves top level fields alone", func() {
@@ -229,7 +336,7 @@ key-2: "inner-value-2"`))
 	})
 
 	It("leaves unknown fields alone", func() {
-		commandRunner.WhenRunning(CommandSpec{
+		commandRunner.WhenRunning(fake_command_runner.CommandSpec{
 			Path: "lpass",
 			Args: []string{
 				"show",
@@ -247,7 +354,18 @@ key-2: "inner-value-2"`))
 	})
 
 	It("caches lpass error values", func() {
-		commandRunner.WhenRunning(CommandSpec{
+		commandRunner.WhenRunning(fake_command_runner.CommandSpec{
+			Path: "lpass",
+			Args: []string{
+				"ls",
+				"unknown",
+			},
+		}, func(cmd *exec.Cmd) error {
+			cmd.Stdout.Write([]byte(fmt.Sprintf("((none))\n    %s [id: 9999999]", "unknown")))
+			return nil
+		})
+
+		commandRunner.WhenRunning(fake_command_runner.CommandSpec{
 			Path: "lpass",
 			Args: []string{
 				"show",
@@ -265,6 +383,18 @@ key-2: ((unknown/secret))`
 		Expect(output).To(Equal(`key-1: ((unknown/secret))
 key-2: ((unknown/secret))`))
 
-		Expect(commandRunner.ExecutedCommands()).To(HaveLen(2))
+		callsToShow := getCallCount("show", commandRunner)
+		Expect(callsToShow).To(Equal(1))
 	})
 })
+
+func getCallCount(command string, runner *fake_command_runner.FakeCommandRunner) int {
+	calls := 0
+	for _, call := range runner.ExecutedCommands() {
+		if strings.Contains(strings.Join(call.Args, ","), command) {
+			calls++
+		}
+	}
+
+	return calls
+}
