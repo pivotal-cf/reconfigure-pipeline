@@ -25,7 +25,7 @@ type cacheResult struct {
 	Result string
 }
 
-type Credential struct {
+type credentialPath struct {
 	Name      string
 	FlagIndex int
 }
@@ -59,21 +59,21 @@ func (l *Processor) handle(credHandle string) string {
 		return fmt.Sprintf("((%s))", credHandle)
 	}
 
-	err, cred := l.FindCredential(pathParts)
+	err, credPath := l.findCredentialPath(pathParts)
 
 	if err != nil {
 		return fmt.Sprintf("((%s))", credHandle)
 	}
 
-	err, credential := l.getCredential(cred.Name, pathParts[cred.FlagIndex])
+	err, credential := l.getCredential(credPath.Name, pathParts[credPath.FlagIndex])
 
 	if err != nil {
 		return fmt.Sprintf("((%s))", credHandle)
 	}
 
 	fragment := ""
-	if len(pathParts) > cred.FlagIndex+1 {
-		fragment = pathParts[cred.FlagIndex+1]
+	if len(pathParts) > credPath.FlagIndex+1 {
+		fragment = pathParts[credPath.FlagIndex+1]
 	}
 
 	if fragment != "" {
@@ -97,7 +97,7 @@ func (l *Processor) handle(credHandle string) string {
 	return string(encoded)
 }
 
-func (l *Processor) FindCredential(pathParts []string) (error, Credential) {
+func (l *Processor) findCredentialPath(pathParts []string) (error, credentialPath) {
 	cmd := exec.Command("lpass", "ls", pathParts[0])
 
 	output := &bytes.Buffer{}
@@ -121,10 +121,10 @@ func (l *Processor) FindCredential(pathParts []string) (error, Credential) {
 	}
 
 	if len(credentialArray) == 0 {
-		return errors.New("credential does not exist"), Credential{}
+		return errors.New("credential does not exist"), credentialPath{}
 	}
 
-	return nil, Credential{
+	return nil, credentialPath{
 		Name:      strings.Join(credentialArray, "/"),
 		FlagIndex: flagIndex,
 	}

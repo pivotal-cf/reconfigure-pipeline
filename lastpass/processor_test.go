@@ -27,34 +27,11 @@ var _ = Describe("Processor", func() {
 		processor = lastpass.NewProcessor(commandRunner)
 	})
 
-	It("identifies credentials", func() {
-		commandRunner.WhenRunning(fake_command_runner.CommandSpec{
-			Path: "lpass",
-			Args: []string{
-				"ls",
-				"my-folder",
-			},
-		}, func(cmd *exec.Cmd) error {
-			cmd.Stdout.Write([]byte("my-folder\n    my-credential [id: 9999999]"))
-			return nil
-		})
+	It("leaves value when folder does not exist", func() {
+		input := "key: ((some-folder/my-credential/Username))"
+		output := processor.Process(input)
 
-		input := []string{"my-folder", "my-credential", "Username"}
-		expected := lastpass.Credential{
-			Name:      "my-folder/my-credential",
-			FlagIndex: 2,
-		}
-		err, output := processor.FindCredential(input)
-
-		Expect(err).ToNot(HaveOccurred())
-		Expect(output).To(Equal(expected))
-	})
-
-	It("returns error when credential doesn't exist", func() {
-		input := []string{"my-folder", "my-credential", "Username"}
-		err, _ := processor.FindCredential(input)
-
-		Expect(err).To(Equal(errors.New("credential does not exist")))
+		Expect(output).To(Equal("key: ((some-folder/my-credential/Username))"))
 	})
 
 	Context("when some folder exist", func() {
