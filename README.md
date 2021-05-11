@@ -1,6 +1,8 @@
+# DEPRECATED. We recommend using Concourse's built-in [credential management](https://concourse-ci.org/creds.html) support instead.
+
 # reconfigure-pipeline
 
-reconfigure-pipeline is a command-line tool that streamlines the process of pulling credentials from [LastPass](http://lastpass.com/) into a [Concourse](https://concourse.ci/) pipeline. It uses the [LastPass CLI](https://github.com/lastpass/lastpass-cli) to read credentials from LastPass, writes these credentials to a [named pipe](https://en.wikipedia.org/wiki/Named_pipe), and calls [fly](https://concourse.ci/fly-cli.html) with the named pipe as an argument, ensuring credentials are never written to disk.
+reconfigure-pipeline is a command-line tool that streamlines the process of pulling credentials from [LastPass](https://www.lastpass.com/) into a [Concourse](https://concourse-ci.org/) pipeline. It uses the [LastPass CLI](https://github.com/lastpass/lastpass-cli) to read credentials from LastPass, writes these credentials to a [named pipe](https://en.wikipedia.org/wiki/Named_pipe), and calls [fly](https://concourse-ci.org/fly.html) with the named pipe as an argument, ensuring credentials are never written to disk.
 
 ## Motivation
 
